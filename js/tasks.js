@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     initializeTasks();
     setupEventListeners();
+    setupDateTimeInput();
 });
 
 const TASK_STATUS = {
@@ -8,9 +9,49 @@ const TASK_STATUS = {
     COMPLETED: 'completed'
 };
 
+// Pomodoro settings (in minutes)
+const POMODORO_DURATION = 25;
+const SHORT_BREAK_DURATION = 5;
+const LONG_BREAK_DURATION = 15;
+const LONG_BREAK_INTERVAL = 4;
+
 let tasks = [];
 let sortOrder = "dueDate";
 let sortDirection = "asc";
+
+function setupDateTimeInput() {
+    const dueDateInput = document.getElementById("task-due-date");
+    dueDateInput.type = "date"; // Start with date-only input
+    
+    // Add time toggle button
+    const timeToggle = document.createElement("button");
+    timeToggle.type = "button";
+    timeToggle.className = "text-sm text-cherry-600 hover:text-cherry-700 ml-2";
+    timeToggle.textContent = "+ Add Time";
+    timeToggle.addEventListener("click", () => {
+        dueDateInput.type = "datetime-local";
+        timeToggle.remove();
+    });
+    
+    document.querySelector("#task-due-date-container").appendChild(timeToggle);
+}
+
+function calculateDefaultDueDate(durationHours) {
+    const now = new Date();
+    const durationMinutes = durationHours * 60;
+    
+    // Calculate total work time including breaks
+    const pomodorosNeeded = Math.ceil(durationMinutes / POMODORO_DURATION);
+    const shortBreaks = Math.max(0, pomodorosNeeded - 1);
+    const longBreaks = Math.floor(shortBreaks / LONG_BREAK_INTERVAL);
+    
+    const totalTimeMinutes = (pomodorosNeeded * POMODORO_DURATION) + 
+                           (shortBreaks * SHORT_BREAK_DURATION) + 
+                           (longBreaks * (LONG_BREAK_DURATION - SHORT_BREAK_DURATION));
+    
+    const dueDate = new Date(now.getTime() + totalTimeMinutes * 60000);
+    return dueDate;
+}
 
 function initializeTasks() {
     tasks = loadTasks();
@@ -39,6 +80,26 @@ function setupEventListeners() {
             document.getElementById("task-name").focus();
         });
     }
+
+    // Auto-calculate due date when duration changes
+    document.getElementById("task-duration")?.addEventListener("change", function() {
+        if (!document.getElementById("task-due-date").value) {
+            updateDefaultDueDate();
+        }
+    });
+}
+
+function updateDefaultDueDate() {
+    const durationInput = document.getElementById("task-duration");
+    const dueDateInput = document.getElementById("task-due-date");
+    
+    if (durationInput.value && dueDateInput.type === "date") {
+        const duration = parseFloat(durationInput.value);
+        if (!isNaN(duration) && duration > 0) {
+            const defaultDueDate = calculateDefaultDueDate(duration);
+            dueDateInput.valueAsDate = defaultDueDate;
+        }
+    }
 }
 
 function addTask(event) {
@@ -46,14 +107,20 @@ function addTask(event) {
     
     const taskName = document.getElementById("task-name").value.trim();
     const taskDuration = parseFloat(document.getElementById("task-duration").value);
-    const taskDueDate = document.getElementById("task-due-date").value;
+    let taskDueDate = document.getElementById("task-due-date").value;
 
-    if (!taskName || isNaN(taskDuration) || !taskDueDate) {
-        alert("Please fill in all fields correctly");
+    if (!taskName || isNaN(taskDuration)) {
+        alert("Please fill in task name and duration");
         return;
     }
 
-    const estimatedPomodoros = Math.ceil((taskDuration * 60) / 25);
+    // If no due date specified, use default calculation
+    if (!taskDueDate) {
+        const defaultDueDate = calculateDefaultDueDate(taskDuration);
+        taskDueDate = defaultDueDate.toISOString().slice(0, 16);
+    }
+
+    const estimatedPomodoros = Math.ceil((taskDuration * 60) / POMODORO_DURATION);
 
     const newTask = {
         id: Date.now(),
@@ -71,7 +138,10 @@ function addTask(event) {
     saveTasks();
     renderTasks();
     event.target.reset();
+    updateDefaultDueDate(); // Reset to default for next task
 }
+
+// ... (rest of the file remains the same, including renderTasks, createTaskElement, etc.)
 
 function renderTasks() {
     renderFilteredTasks([...tasks]);
@@ -101,7 +171,7 @@ function createTaskElement(task) {
             </div>
             <div class="flex space-x-2">
                 <button class="start-session-button text-sm bg-cherry-600 hover:bg-cherry-700 text-white py-1 px-3 rounded">
-                    Start
+                    Go to Session
                 </button>
                 <button class="edit-task-button text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-3 rounded">
                     Edit
@@ -139,7 +209,6 @@ function setupTaskStatusToggle(taskItem, task) {
         saveTasks();
         renderTasks();
         
-        // Update stats when task status changes
         if (window.pomodoroTimer) {
             window.pomodoroTimer.updateTodayStats();
         }
@@ -238,7 +307,6 @@ function addTaskButtonListeners() {
                 saveTasks();
                 renderTasks();
                 
-                // Update stats when task is deleted
                 if (window.pomodoroTimer) {
                     window.pomodoroTimer.updateTodayStats();
                 }

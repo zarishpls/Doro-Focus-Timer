@@ -2,18 +2,23 @@
 
 /* Timer progress ring */
 #progress-ring {
-    transition: stroke-dashoffset 1s linear;
+    stroke: var(--color-primary-600);
 }
+
+.task-item:hover {
+    box-shadow: 0 4px 6px -1px rgba(var(--color-primary-500), 0.1);
+}
+
+.toggle-checkbox:checked + .toggle-label {
+    background-color: var(--color-primary-500);
+}
+
 
 /* Task item styling */
 .task-item {
     transition: all 0.2s ease;
 }
 
-.task-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
 
 /* Active timer state */
 .active-pomodoro {
@@ -100,10 +105,6 @@ input[type="range"]::-webkit-slider-thumb {
 .toggle-checkbox:checked {
     right: 0;
     border-color: #fff;
-}
-
-.toggle-checkbox:checked + .toggle-label {
-    background-color: #d22e5c;
 }
 
 /* Focus history items */
