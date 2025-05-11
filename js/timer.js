@@ -168,14 +168,14 @@ class PomodoroTimer {
         }
         
         this.pauseTimer();
-        this.handleTimerCompletion();
+        this.handleTimerCompletion(true); // Pass true to indicate this was a skip action
     }
 
-    handleTimerCompletion() {
+    handleTimerCompletion(wasSkipped = false) {
         clearInterval(this.timer);
         this.isRunning = false;
         
-        this.recordSession();
+        this.recordSession(wasSkipped);
         
         if (!this.isBreak && this.currentTask) {
             this.currentTask.pomodoros++;
@@ -183,7 +183,7 @@ class PomodoroTimer {
                 this.currentTask.completed = true;
                 this.currentTask.completedAt = new Date().toISOString();
                 this.markTaskComplete();
-                this.updateCurrentTaskDisplay(); // Add this line to update UI immediately
+                this.updateCurrentTaskDisplay();
             }
             this.updateTasksInStorage();
         }
@@ -204,6 +204,176 @@ class PomodoroTimer {
         if ((this.isBreak && this.autoStartBreaks) || (!this.isBreak && this.autoStartPomodoros)) {
             this.startTimer();
         }
+
+        // Update stats after completion
+        this.updateTodayStats();
+    }
+
+    recordSession(wasSkipped = false) {
+        if (!this.sessionStartTime) return;
+        
+        const now = new Date();
+        const durationMinutes = Math.max(1, Math.round((now - this.sessionStartTime) / 60000));
+        
+        const session = {
+            date: now.toISOString().split('T')[0],
+            startTime: this.sessionStartTime.toTimeString().substring(0, 5),
+            endTime: now.toTimeString().substring(0, 5),
+            duration: durationMinutes,
+            type: this.isBreak ? 'break' : 'focus',
+            taskName: this.currentTask?.name || null,
+            taskCompleted: this.currentTask?.completed || false,
+            skipped: wasSkipped || this.secondsLeft > 0
+        };
+        
+        const sessions = JSON.parse(localStorage.getItem('pomodoro-sessions')) || [];
+        sessions.push(session);
+        localStorage.setItem('pomodoro-sessions', JSON.stringify(sessions));
+    }
+
+    updateTasksInStorage() {
+        if (!this.currentTask) return;
+        
+        const tasks = JSON.parse(localStorage.getItem('pomodoro-tasks')) || [];
+        const updatedTasks = tasks.map(task => 
+            task.id === this.currentTask.id ? this.currentTask : task
+        );
+        localStorage.setItem('pomodoro-tasks', JSON.stringify(updatedTasks));
+        this.updateCurrentTaskDisplay();
+        this.updateTaskSelectionUI();
+    }
+
+    updateSessionProgress() {
+        const sessionProgress = document.querySelector('.w-full > .flex.space-x-2');
+        if (!sessionProgress) return;
+
+        const totalSessions = this.currentTask?.estimatedPomodoros || this.longBreakInterval;
+        const completedSessions = this.currentTask?.pomodoros || this.sessionCount;
+
+        sessionProgress.innerHTML = '';
+        
+        for (let i = 0; i < totalSessions; i++) {
+            const sessionBar = document.createElement('div');
+            sessionBar.className = `h-2 rounded-full ${i < completedSessions ? 'bg-cherry-500' : 'bg-gray-200'}`;
+            sessionBar.style.width = `calc(100% / ${totalSessions} - 0.125rem)`;
+            sessionProgress.appendChild(sessionBar);
+        }
+
+        const sessionText = document.querySelector('.w-full > .flex.justify-between.text-xs.text-gray-500');
+        if (sessionText) {
+            sessionText.innerHTML = `
+                <span>${completedSessions} completed</span>
+                <span>${totalSessions - completedSessions} remaining</span>
+            `;
+        }
+    }
+
+    updateSkipButton() {
+        const skipButton = document.getElementById('skip-timer');
+        if (!skipButton) return;
+        
+        if (this.currentTask?.completed || 
+            (this.currentTask && this.currentTask.pomodoros >= this.currentTask.estimatedPomodoros)) {
+            skipButton.disabled = true;
+            skipButton.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            skipButton.disabled = false;
+            skipButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    updateTodayStats() {
+        const today = new Date().toISOString().split('T')[0];
+        const sessions = JSON.parse(localStorage.getItem('pomodoro-sessions')) || [];
+        const todaySessions = sessions.filter(session => session.date === today);
+        
+        let pomodoros = 0;
+        let focusTime = 0;
+        let breakTime = 0;
+        let completedTasks = 0;
+        
+        todaySessions.forEach(session => {
+            if (session.type === 'focus') {
+                pomodoros++;
+                focusTime += session.duration;
+            } else {
+                breakTime += session.duration;
+            }
+            
+            if (session.taskCompleted) {
+                completedTasks++;
+            }
+        });
+        
+        document.getElementById('today-pomodoros').textContent = pomodoros;
+        document.getElementById('today-focus-time').textContent = focusTime;
+        document.getElementById('today-break-time').textContent = breakTime;
+        document.getElementById('today-tasks-completed').textContent = completedTasks;
+        
+        // Update focus history
+        const historyContainer = document.getElementById('focus-history');
+        historyContainer.innerHTML = '';
+        
+        todaySessions.slice(0, 5).forEach(session => {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'flex items-center';
+            historyItem.innerHTML = `
+                <div class="w-3 h-3 ${session.type === 'focus' ? 'bg-cherry-500' : 'bg-gray-300'} rounded-full mr-2"></div>
+                <div class="text-sm">${this.formatTime(session.startTime)} - ${this.formatTime(session.endTime)}</div>
+                <div class="ml-auto text-xs text-gray-500">${session.taskName || 'Break'}</div>
+            `;
+            historyContainer.appendChild(historyItem);
+        });
+    }
+
+    getBreakDuration() {
+        return this.sessionCount % this.longBreakInterval === 0 
+            ? this.longBreakDuration 
+            : this.shortBreakDuration;
+    }
+
+    updateTimerDisplay() {
+        const minutes = Math.floor(this.secondsLeft / 60);
+        const seconds = this.secondsLeft % 60;
+        document.getElementById('timer-display').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        document.getElementById('timer-mode').textContent = 
+            this.isBreak ? 'Break Time' : 'Focus Session';
+        
+        document.getElementById('session-count').textContent = 
+            `Session ${this.sessionCount + 1} of ${this.currentTask?.estimatedPomodoros || this.longBreakInterval}`;
+    }
+
+    updateCurrentTaskDisplay() {
+        if (!this.currentTask) {
+            document.getElementById('current-task').innerHTML = `
+                <p class="text-gray-500">No task selected</p>
+                <button id="select-task" class="text-cherry-600 hover:text-cherry-700 mt-2">
+                    Select a task
+                </button>
+            `;
+            document.getElementById('select-task')?.addEventListener('click', () => {
+                this.showTaskSelector();
+            });
+            return;
+        }
+
+        const progress = (this.currentTask.pomodoros / this.currentTask.estimatedPomodoros) * 100;
+        
+        document.getElementById('current-task').innerHTML = `
+            <h3 class="font-medium ${this.currentTask.completed ? 'text-gray-500 line-through' : 'text-gray-900'} mb-1">
+                ${this.currentTask.name}
+                ${this.currentTask.completed ? '<span class="ml-2 text-xs text-green-600">(Completed)</span>' : ''}
+            </h3>
+            <div class="flex justify-between items-center text-sm text-gray-500 mb-2">
+                <span>Due: ${this.formatDate(this.currentTask.dueDate)}</span>
+                <span>${this.currentTask.pomodoros}/${this.currentTask.estimatedPomodoros} Pomodoros</span>
+            </div>
+            <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-cherry-500 h-full rounded-full" style="width: ${progress}%"></div>
+            </div>
+        `;
     }
 
     markTaskComplete() {
@@ -312,128 +482,6 @@ class PomodoroTimer {
         }
     }
 
-    recordSession() {
-        if (!this.sessionStartTime) return;
-        
-        const now = new Date();
-        const durationMinutes = Math.max(1, Math.round((now - this.sessionStartTime) / 60000));
-        
-        const session = {
-            date: now.toISOString().split('T')[0],
-            startTime: this.sessionStartTime.toTimeString().substring(0, 5),
-            endTime: now.toTimeString().substring(0, 5),
-            duration: durationMinutes,
-            type: this.isBreak ? 'break' : 'focus',
-            taskName: this.currentTask?.name || null,
-            taskCompleted: this.currentTask?.completed || false,
-            skipped: this.secondsLeft > 0
-        };
-        
-        const sessions = JSON.parse(localStorage.getItem('pomodoro-sessions')) || [];
-        sessions.push(session);
-        localStorage.setItem('pomodoro-sessions', JSON.stringify(sessions));
-    }
-
-    updateTasksInStorage() {
-        if (!this.currentTask) return;
-        
-        const tasks = JSON.parse(localStorage.getItem('pomodoro-tasks')) || [];
-        const updatedTasks = tasks.map(task => 
-            task.id === this.currentTask.id ? this.currentTask : task
-        );
-        localStorage.setItem('pomodoro-tasks', JSON.stringify(updatedTasks));
-        this.updateCurrentTaskDisplay();
-    }
-
-    updateSessionProgress() {
-        const sessionProgress = document.querySelector('.w-full > .flex.space-x-2');
-        if (!sessionProgress) return;
-
-        const totalSessions = this.currentTask?.estimatedPomodoros || this.longBreakInterval;
-        const completedSessions = this.currentTask?.pomodoros || this.sessionCount;
-
-        sessionProgress.innerHTML = '';
-        
-        for (let i = 0; i < totalSessions; i++) {
-            const sessionBar = document.createElement('div');
-            sessionBar.className = `h-2 rounded-full ${i < completedSessions ? 'bg-cherry-500' : 'bg-gray-200'}`;
-            sessionBar.style.width = `calc(100% / ${totalSessions} - 0.125rem)`;
-            sessionProgress.appendChild(sessionBar);
-        }
-
-        const sessionText = document.querySelector('.w-full > .flex.justify-between.text-xs.text-gray-500');
-        if (sessionText) {
-            sessionText.innerHTML = `
-                <span>${completedSessions} completed</span>
-                <span>${totalSessions - completedSessions} remaining</span>
-            `;
-        }
-    }
-
-    updateSkipButton() {
-        const skipButton = document.getElementById('skip-timer');
-        if (!skipButton) return;
-        
-        if (this.currentTask?.completed || 
-            (this.currentTask && this.currentTask.pomodoros >= this.currentTask.estimatedPomodoros)) {
-            skipButton.disabled = true;
-            skipButton.classList.add('opacity-50', 'cursor-not-allowed');
-        } else {
-            skipButton.disabled = false;
-            skipButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    }
-
-    getBreakDuration() {
-        return this.sessionCount % this.longBreakInterval === 0 
-            ? this.longBreakDuration 
-            : this.shortBreakDuration;
-    }
-
-    updateTimerDisplay() {
-        const minutes = Math.floor(this.secondsLeft / 60);
-        const seconds = this.secondsLeft % 60;
-        document.getElementById('timer-display').textContent = 
-            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        document.getElementById('timer-mode').textContent = 
-            this.isBreak ? 'Break Time' : 'Focus Session';
-        
-        document.getElementById('session-count').textContent = 
-            `Session ${this.sessionCount + 1} of ${this.currentTask?.estimatedPomodoros || this.longBreakInterval}`;
-    }
-
-    updateCurrentTaskDisplay() {
-        if (!this.currentTask) {
-            document.getElementById('current-task').innerHTML = `
-                <p class="text-gray-500">No task selected</p>
-                <button id="select-task" class="text-cherry-600 hover:text-cherry-700 mt-2">
-                    Select a task
-                </button>
-            `;
-            document.getElementById('select-task')?.addEventListener('click', () => {
-                this.showTaskSelector();
-            });
-            return;
-        }
-
-        const progress = (this.currentTask.pomodoros / this.currentTask.estimatedPomodoros) * 100;
-        
-        document.getElementById('current-task').innerHTML = `
-            <h3 class="font-medium ${this.currentTask.completed ? 'text-gray-500 line-through' : 'text-gray-900'} mb-1">
-                ${this.currentTask.name}
-                ${this.currentTask.completed ? '<span class="ml-2 text-xs text-green-600">(Completed)</span>' : ''}
-            </h3>
-            <div class="flex justify-between items-center text-sm text-gray-500 mb-2">
-                <span>Due: ${this.formatDate(this.currentTask.dueDate)}</span>
-                <span>${this.currentTask.pomodoros}/${this.currentTask.estimatedPomodoros} Pomodoros</span>
-            </div>
-            <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-cherry-500 h-full rounded-full" style="width: ${progress}%"></div>
-            </div>
-        `;
-    }
-
     notify() {
         if (this.enableNotifications && Notification.permission === 'granted') {
             const title = this.isBreak ? 'Break Time!' : 'Focus Time!';
@@ -459,11 +507,21 @@ class PomodoroTimer {
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('en-US', options);
     }
+
+    formatTime(timeString) {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+    }
 }
 
 // Initialize timer when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('timer-display')) {
         window.pomodoroTimer = new PomodoroTimer();
+        window.pomodoroTimer.updateTodayStats();
     }
 });
