@@ -22,6 +22,7 @@ class PomodoroTimer {
         this.initializeProgressRing();
         this.updateSessionProgress();
         this.updateSkipButton();
+        this.updateTodayStats();
     }
 
     initializeProgressRing() {
@@ -168,7 +169,7 @@ class PomodoroTimer {
         }
         
         this.pauseTimer();
-        this.handleTimerCompletion(true); // Pass true to indicate this was a skip action
+        this.handleTimerCompletion(true);
     }
 
     handleTimerCompletion(wasSkipped = false) {
@@ -204,9 +205,6 @@ class PomodoroTimer {
         if ((this.isBreak && this.autoStartBreaks) || (!this.isBreak && this.autoStartPomodoros)) {
             this.startTimer();
         }
-
-        // Update stats after completion
-        this.updateTodayStats();
     }
 
     recordSession(wasSkipped = false) {
@@ -229,6 +227,7 @@ class PomodoroTimer {
         const sessions = JSON.parse(localStorage.getItem('pomodoro-sessions')) || [];
         sessions.push(session);
         localStorage.setItem('pomodoro-sessions', JSON.stringify(sessions));
+        this.updateTodayStats();
     }
 
     updateTasksInStorage() {
@@ -285,12 +284,16 @@ class PomodoroTimer {
     updateTodayStats() {
         const today = new Date().toISOString().split('T')[0];
         const sessions = JSON.parse(localStorage.getItem('pomodoro-sessions')) || [];
+        const tasks = JSON.parse(localStorage.getItem('pomodoro-tasks')) || [];
         const todaySessions = sessions.filter(session => session.date === today);
         
         let pomodoros = 0;
         let focusTime = 0;
         let breakTime = 0;
-        let completedTasks = 0;
+        let completedTasks = tasks.filter(task => {
+            if (!task.completedAt) return false;
+            return task.completedAt.split('T')[0] === today;
+        }).length;
         
         todaySessions.forEach(session => {
             if (session.type === 'focus') {
@@ -298,10 +301,6 @@ class PomodoroTimer {
                 focusTime += session.duration;
             } else {
                 breakTime += session.duration;
-            }
-            
-            if (session.taskCompleted) {
-                completedTasks++;
             }
         });
         
@@ -385,6 +384,7 @@ class PomodoroTimer {
                 return {
                     ...task,
                     status: 'completed',
+                    completed: true,
                     completedAt: new Date().toISOString()
                 };
             }
@@ -394,6 +394,7 @@ class PomodoroTimer {
         
         this.updateTaskSelectionUI();
         this.showCongratulation();
+        this.updateTodayStats();
     }
 
     showCongratulation() {
@@ -436,7 +437,6 @@ class PomodoroTimer {
             confetti.style.animationDelay = `${delay}s`;
             confetti.style.animationDuration = `${duration}s`;
             
-            // Random rotation
             confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
             
             document.body.appendChild(confetti);
@@ -456,7 +456,7 @@ class PomodoroTimer {
             
             tasks.forEach(task => {
                 const taskElement = document.createElement('div');
-                taskElement.className = `task-option p-3 border rounded-lg cursor-pointer hover:border-cherry-200 hover:bg-cherry-50 transition ${task.completed ? 'border-gray-200' : 'border-gray-200'}`;
+                taskElement.className = `task-option p-3 border rounded-lg cursor-pointer hover:border-cherry-200 hover:bg-cherry-50 transition ${task.completed ? 'border-gray-200 bg-gray-50' : 'border-gray-200'}`;
                 taskElement.dataset.id = task.id;
                 taskElement.innerHTML = `
                     <h3 class="font-medium ${task.completed ? 'text-gray-500 line-through' : 'text-gray-900'}">${task.name}</h3>
@@ -473,7 +473,6 @@ class PomodoroTimer {
                     this.updateSessionProgress();
                     this.updateSkipButton();
                     
-                    // Update URL without reloading
                     const url = new URL(window.location);
                     url.searchParams.set('taskId', task.id);
                     window.history.pushState({}, '', url);
@@ -518,10 +517,8 @@ class PomodoroTimer {
     }
 }
 
-// Initialize timer when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('timer-display')) {
         window.pomodoroTimer = new PomodoroTimer();
-        window.pomodoroTimer.updateTodayStats();
     }
 });
