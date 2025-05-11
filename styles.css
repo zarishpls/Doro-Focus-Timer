@@ -3,6 +3,12 @@
 /* Timer progress ring */
 #progress-ring {
     transition: stroke-dashoffset 1s linear;
+    animation: ringPulse 2s infinite;
+}
+
+@keyframes ringPulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.2); }
 }
 
 /* Task item styling */
@@ -109,10 +115,13 @@ input[type="range"]::-webkit-slider-thumb {
 /* Focus history items */
 .focus-history-item {
     transition: opacity 0.2s;
+    animation: slideInRight 0.5s ease-out;
 }
 
 .focus-history-item:hover {
     opacity: 0.8;
+    transform: translateX(5px);
+    background: rgba(210, 46, 92, 0.05);
 }
 
 /* Add these to your existing styles.css */
@@ -156,8 +165,8 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* Task selection hover state */
 .task-option:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
 }
 
@@ -222,4 +231,1169 @@ input[type="range"]::-webkit-slider-thumb {
     color: #333;
     font-size: 1.4rem;
     margin-bottom: 0;
+}
+
+/* Achievement Notification Bar */
+#achievement-notification {
+    transform: translateY(-100%);
+}
+
+#achievement-notification.show {
+    transform: translateY(0);
+}
+
+#achievement-notification.hide {
+    transform: translateY(-100%);
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-100%);
+    }
+}
+
+/* Achievement Popup */
+.achievement-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.achievement-popup-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.achievement-popup {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 400px;
+    transform: scale(0.95);
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.achievement-popup.active {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.achievement-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.achievement-popup-icon {
+    font-size: 2rem;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fce7ea;
+    border-radius: 0.75rem;
+}
+
+.achievement-popup-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.achievement-popup-description {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.achievement-progress-container {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.75rem;
+}
+
+.achievement-progress-bar {
+    height: 0.5rem;
+    background: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.achievement-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e34a73, #ed7594);
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.achievement-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shine 2s infinite;
+}
+
+.achievement-progress-status {
+    text-align: center;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+/* Achievement Unlock Notification */
+.achievement-unlock-notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transform: translateX(120%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.achievement-unlock-notification.show {
+    transform: translateX(0);
+}
+
+.achievement-unlock-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.achievement-unlock-icon {
+    font-size: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fce7ea;
+    border-radius: 0.5rem;
+}
+
+.achievement-unlock-text h4 {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.achievement-unlock-text p {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Hide scrollbar but keep functionality */
+.overflow-x-auto {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 4px 0;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+    display: none;
+}
+
+/* Achievement Modal Styles */
+.achievement-modal {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.achievement-modal.show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.achievement-modal .modal-content {
+    background: #ffffff;
+    box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.1),
+        0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(210, 46, 92, 0.15);
+}
+
+.achievement-modal .progress-bar {
+    background: linear-gradient(90deg, #d22e5c, #e34a73);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Interactive Graphics */
+.interactive-graphics {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+    mix-blend-mode: multiply;
+}
+
+/* Ensure content stays above the graphics */
+header, main, footer, .achievement-item, .achievement-modal {
+    position: relative;
+    z-index: 1;
+}
+
+/* Add subtle hover effect to main content sections */
+main section {
+    transition: transform 0.3s ease;
+}
+
+main section:hover {
+    transform: translateY(-2px);
+}
+
+/* Add subtle animation to achievement icons */
+.achievement-icon {
+    transition: all 0.3s ease;
+}
+
+.achievement-item:hover .achievement-icon {
+    filter: drop-shadow(0 2px 4px rgba(210, 46, 92, 0.2));
+}
+
+/* Plant System Styles */
+.plant-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 2rem auto;
+    transition: all 0.3s ease;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.plant-svg {
+    width: 100%;
+    height: 100%;
+    transition: all 0.5s ease;
+    transform-origin: center bottom;
+}
+
+/* Enhanced wilting animation */
+.plant-container.wilted .plant-svg {
+    filter: grayscale(0.5) brightness(0.8);
+    animation: wilt 2s ease-in-out;
+}
+
+@keyframes wilt {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(0.95) rotate(-5deg); }
+    100% { transform: scale(0.95) rotate(-5deg); }
+}
+
+/* Enhanced growing animation */
+.plant-container.growing {
+    animation: grow 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes grow {
+    0% { transform: scale(0.95) translateY(10px); }
+    50% { transform: scale(1.05) translateY(-5px); }
+    100% { transform: scale(1) translateY(0); }
+}
+
+/* Enhanced water button */
+.water-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 1rem auto;
+    padding: 0.75rem 1.5rem;
+    background: #4A90E2;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.water-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease-out, height 0.6s ease-out;
+}
+
+.water-button:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.water-button:hover {
+    background: #357ABD;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.water-button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced water icon animation */
+.water-icon {
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.water-button:hover .water-icon {
+    transform: rotate(-15deg) scale(1.2);
+    animation: waterDrip 1s infinite;
+}
+
+@keyframes waterDrip {
+    0%, 100% { transform: rotate(-15deg) scale(1.2); }
+    50% { transform: rotate(-25deg) scale(1.3); }
+}
+
+/* Enhanced water drops */
+.water-drop {
+    position: absolute;
+    top: -20px;
+    width: 8px;
+    height: 8px;
+    background: #4A90E2;
+    border-radius: 50%;
+    animation: waterDrop 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    box-shadow: 0 0 8px rgba(74, 144, 226, 0.5);
+}
+
+@keyframes waterDrop {
+    0% {
+        transform: translateY(0) scale(1) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(50px) scale(1.2) rotate(180deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(100px) scale(0.5) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Enhanced plant message */
+.plant-message {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    padding: 12px 24px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    animation: messageFloat 3s ease-in-out;
+}
+
+@keyframes messageFloat {
+    0% { transform: translateX(-50%) translateY(100%); opacity: 0; }
+    10% { transform: translateX(-50%) translateY(0); opacity: 1; }
+    90% { transform: translateX(-50%) translateY(0); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+}
+
+/* Enhanced growth stage animations */
+.seed { 
+    animation: seedPulse 2s infinite, seedRotate 4s infinite;
+}
+
+.sprout { 
+    animation: sproutGrow 1s ease-out, sproutWave 3s infinite;
+}
+
+.leafy { 
+    animation: leafWave 3s infinite, leafGrow 1s ease-out;
+}
+
+.budding { 
+    animation: flowerBloom 1s ease-out, budSway 4s infinite;
+}
+
+.blooming { 
+    animation: tomatoPop 1s ease-out, bloomSway 4s infinite;
+}
+
+@keyframes seedPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes seedRotate {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(5deg); }
+}
+
+@keyframes sproutGrow {
+    0% { transform: scaleY(0); opacity: 0; }
+    100% { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes sproutWave {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(3deg); }
+}
+
+@keyframes leafWave {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(5deg); }
+}
+
+@keyframes leafGrow {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes flowerBloom {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes budSway {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(4deg); }
+}
+
+@keyframes tomatoPop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bloomSway {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(3deg); }
+}
+
+/* Session counter animation */
+.session-counter {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4A90E2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    animation: counterPulse 2s infinite;
+}
+
+@keyframes counterPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.achievement-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: var(--bg-color);
+    border: 2px solid var(--accent-color);
+    border-radius: 12px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.achievement-popup.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.achievement-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.achievement-popup-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--bg-color);
+}
+
+.achievement-popup-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.achievement-popup-description {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.achievement-progress-container {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.achievement-progress-bar {
+    height: 8px;
+    background: var(--bg-color);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.achievement-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-color-light));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.achievement-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shine 2s infinite;
+}
+
+.achievement-progress-text {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.achievement-status {
+    text-align: center;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+.achievement-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 999;
+}
+
+.achievement-popup-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Make achievement items clickable */
+.achievement-item {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.achievement-item:hover {
+    transform: translateY(-2px);
+}
+
+.achievement-item:active {
+    transform: translateY(0);
+}
+
+/* App-wide Animations */
+
+/* Header animations */
+header {
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Timer container animations */
+.timer-container {
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Timer controls animations */
+.timer-controls button {
+    position: relative;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    background: linear-gradient(145deg, #ffffff, #f0f0f0);
+    box-shadow: 
+        5px 5px 10px rgba(0, 0, 0, 0.1),
+        -5px -5px 10px rgba(255, 255, 255, 0.8);
+}
+
+.timer-controls button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #f0f0f0, #ffffff);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.timer-controls button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Primary button (Start) */
+.timer-controls button.bg-cherry-600 {
+    background: linear-gradient(145deg, #d22e5c, #e34a73);
+    color: white;
+    box-shadow: 
+        5px 5px 10px rgba(210, 46, 92, 0.3),
+        -5px -5px 10px rgba(227, 74, 115, 0.2);
+}
+
+/* Hover effects */
+.timer-controls button:hover {
+    transform: translateY(-2px) scale(1.02) rotateX(5deg);
+    box-shadow: 
+        8px 8px 16px rgba(0, 0, 0, 0.15),
+        -8px -8px 16px rgba(255, 255, 255, 0.9);
+}
+
+.timer-controls button:hover::before {
+    opacity: 1;
+}
+
+/* Active/Pressed state */
+.timer-controls button:active {
+    transform: translateY(1px) scale(0.98) rotateX(-5deg);
+    box-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.1),
+        -2px -2px 4px rgba(255, 255, 255, 0.8);
+}
+
+.timer-controls button:active::after {
+    opacity: 1;
+}
+
+/* Button icon animations */
+.timer-controls button svg {
+    transition: all 0.3s ease;
+    transform-style: preserve-3d;
+}
+
+.timer-controls button:hover svg {
+    transform: scale(1.2) rotate(5deg);
+}
+
+.timer-controls button:active svg {
+    transform: scale(0.9) rotate(-5deg);
+}
+
+/* Ripple effect */
+.timer-controls button .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Button text animation */
+.timer-controls button span {
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.timer-controls button:hover span {
+    transform: translateZ(20px);
+}
+
+/* Disabled state */
+.timer-controls button:disabled {
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* Button group spacing */
+.timer-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .timer-controls button {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .timer-controls {
+        gap: 0.5rem;
+    }
+}
+
+/* Task selection animations */
+.task-option {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Stats card animations */
+.bg-gray-50 {
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.bg-gray-50:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Focus history animations */
+.focus-history-item {
+    animation: slideInRight 0.5s ease-out;
+    transition: all 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.focus-history-item:hover {
+    transform: translateX(5px);
+    background: rgba(210, 46, 92, 0.05);
+}
+
+/* Navigation animations */
+nav a {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+nav a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #d22e5c;
+    transition: width 0.3s ease;
+}
+
+nav a:hover::after {
+    width: 100%;
+}
+
+/* Mobile menu animations */
+#mobile-menu {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mobile-menu.hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+#mobile-menu:not(.hidden) {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Session progress bar animations */
+.session-progress-bar {
+    transition: width 0.5s ease-out;
+    animation: progressPulse 2s infinite;
+}
+
+@keyframes progressPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* Timer mode text animation */
+#timer-mode {
+    animation: modeChange 0.5s ease-out;
+}
+
+@keyframes modeChange {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Timer display number animation */
+#timer-display {
+    transition: all 0.3s ease;
+}
+
+#timer-display.changing {
+    animation: numberChange 0.3s ease-out;
+}
+
+@keyframes numberChange {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Stats number animations */
+.text-2xl {
+    transition: all 0.3s ease;
+}
+
+.text-2xl.changing {
+    animation: statChange 0.5s ease-out;
+}
+
+@keyframes statChange {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Footer animations */
+footer {
+    animation: fadeIn 1s ease-out;
+}
+
+/* Loading animations */
+.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+/* Dark mode transition */
+.dark-mode {
+    transition: all 0.3s ease;
+}
+
+/* Button hover effects */
+button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Card hover effects */
+.bg-white {
+    transition: all 0.3s ease;
+}
+
+.bg-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Input focus animations */
+input:focus {
+    animation: inputFocus 0.3s ease-out;
+}
+
+@keyframes inputFocus {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Scroll animations */
+.overflow-x-auto {
+    scroll-behavior: smooth;
+}
+
+/* Achievement unlock animation */
+.achievement-unlock {
+    animation: achievementUnlock 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes achievementUnlock {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Achievement Progress Popup */
+.achievement-progress-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid #d22e5c;
+    min-width: 300px;
+    max-width: 90%;
+}
+
+.achievement-progress-popup.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.achievement-progress-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.achievement-progress-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.achievement-progress-icon {
+    font-size: 2rem;
+    color: #d22e5c;
+}
+
+.achievement-progress-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #d22e5c;
+    margin: 0;
+}
+
+.achievement-progress-description {
+    color: #4b5563;
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.achievement-progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.achievement-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #d22e5c, #e34a73);
+    border-radius: 4px;
+    transition: width 0.5s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.achievement-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.achievement-progress-status {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.achievement-progress-text {
+    color: #d22e5c;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(210, 46, 92, 0.1);
+}
+
+/* Make achievement items clickable */
+.achievement-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.achievement-item:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.achievement-item:active {
+    transform: translateY(0) scale(0.98);
 }

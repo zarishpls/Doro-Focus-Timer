@@ -9,7 +9,19 @@ class PomodoroTimer {
         this.notificationSound = null;
         this.circumference = 2 * Math.PI * 45;
         this.sessionStartTime = null;
+        
+        // Initialize plant system
+        this.plantSystem = new PlantSystem();
+        
+        // Add event listener for session completion
+        document.addEventListener('sessionCompleted', () => {
+            this.plantSystem.checkGrowth();
+        });
+        
         this.init();
+        
+        // Add animation classes to elements
+        this.initializeAnimations();
     }
 
     init() {
@@ -106,12 +118,55 @@ class PomodoroTimer {
     }
 
     setupEventListeners() {
-        document.getElementById('start-timer')?.addEventListener('click', () => this.startTimer());
-        document.getElementById('pause-timer')?.addEventListener('click', () => this.pauseTimer());
-        document.getElementById('reset-timer')?.addEventListener('click', () => this.resetTimer());
-        document.getElementById('skip-timer')?.addEventListener('click', () => this.skipTimer());
-        document.getElementById('change-task')?.addEventListener('click', () => this.showTaskSelector());
-        document.getElementById('select-task')?.addEventListener('click', () => this.showTaskSelector());
+        document.getElementById('start-timer')?.addEventListener('click', (e) => {
+            this.createRipple(e);
+            this.startTimer();
+        });
+        document.getElementById('pause-timer')?.addEventListener('click', (e) => {
+            this.createRipple(e);
+            this.pauseTimer();
+        });
+        document.getElementById('reset-timer')?.addEventListener('click', (e) => {
+            this.createRipple(e);
+            this.resetTimer();
+        });
+        document.getElementById('skip-timer')?.addEventListener('click', (e) => {
+            this.createRipple(e);
+            this.skipTimer();
+        });
+        document.getElementById('change-task')?.addEventListener('click', (e) => {
+            this.createRipple(e);
+            this.showTaskSelector();
+        });
+        document.getElementById('select-task')?.addEventListener('click', (e) => {
+            this.createRipple(e);
+            this.showTaskSelector();
+        });
+    }
+
+    createRipple(event) {
+        const button = event.currentTarget;
+        const ripple = document.createElement('span');
+        const rect = button.getBoundingClientRect();
+        
+        const diameter = Math.max(rect.width, rect.height);
+        const radius = diameter / 2;
+        
+        ripple.style.width = ripple.style.height = `${diameter}px`;
+        ripple.style.left = `${event.clientX - rect.left - radius}px`;
+        ripple.style.top = `${event.clientY - rect.top - radius}px`;
+        ripple.className = 'ripple';
+        
+        const existingRipple = button.querySelector('.ripple');
+        if (existingRipple) {
+            existingRipple.remove();
+        }
+        
+        button.appendChild(ripple);
+        
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
     }
 
     startTimer() {
@@ -183,9 +238,46 @@ class PomodoroTimer {
                 this.currentTask.completed = true;
                 this.currentTask.completedAt = new Date().toISOString();
                 this.markTaskComplete();
-                this.updateCurrentTaskDisplay(); // Add this line to update UI immediately
+                this.updateCurrentTaskDisplay();
             }
             this.updateTasksInStorage();
+        }
+
+        // Update achievements
+        if (!this.isBreak) {
+            // Update First Timer achievement
+            if (this.sessionCount === 0) {
+                window.achievementSystem.updateProgress('firstTimer', 1);
+            }
+            
+            // Update Focus Master achievement
+            window.achievementSystem.updateProgress('focusMaster', this.sessionCount + 1);
+            
+            // Update Task Master achievement if task is completed
+            if (this.currentTask?.completed) {
+                const completedTasks = JSON.parse(localStorage.getItem('pomodoro-tasks') || '[]')
+                    .filter(task => task.completed).length;
+                window.achievementSystem.updateProgress('taskMaster', completedTasks);
+            }
+            
+            // Update Weekly Streak achievement
+            const today = new Date().toISOString().split('T')[0];
+            const streakData = JSON.parse(localStorage.getItem('weeklyStreak') || '{"lastDate": null, "count": 0}');
+            
+            if (streakData.lastDate === today) {
+                // Already counted today
+            } else if (streakData.lastDate === new Date(Date.now() - 86400000).toISOString().split('T')[0]) {
+                // Yesterday, increment streak
+                streakData.count++;
+                streakData.lastDate = today;
+            } else {
+                // Streak broken, reset
+                streakData.count = 1;
+                streakData.lastDate = today;
+            }
+            
+            localStorage.setItem('weeklyStreak', JSON.stringify(streakData));
+            window.achievementSystem.updateProgress('weeklyStreak', streakData.count);
         }
 
         this.isBreak = !this.isBreak;
@@ -200,6 +292,9 @@ class PomodoroTimer {
         this.updateSessionProgress();
         this.updateSkipButton();
         this.notify();
+        
+        // Dispatch session completed event
+        document.dispatchEvent(new CustomEvent('sessionCompleted'));
         
         if ((this.isBreak && this.autoStartBreaks) || (!this.isBreak && this.autoStartPomodoros)) {
             this.startTimer();
@@ -228,7 +323,7 @@ class PomodoroTimer {
 
     showCongratulation() {
         const message = document.createElement('div');
-        message.className = 'congratulation-message';
+        message.className = 'congratulation-message achievement-unlock';
         message.innerHTML = `
             <h3>🎉 Task Completed! 🎉</h3>
             <p>Take a well deserved break now!</p>
@@ -356,7 +451,7 @@ class PomodoroTimer {
         
         for (let i = 0; i < totalSessions; i++) {
             const sessionBar = document.createElement('div');
-            sessionBar.className = `h-2 rounded-full ${i < completedSessions ? 'bg-cherry-500' : 'bg-gray-200'}`;
+            sessionBar.className = `h-2 rounded-full session-progress-bar ${i < completedSessions ? 'bg-cherry-500' : 'bg-gray-200'}`;
             sessionBar.style.width = `calc(100% / ${totalSessions} - 0.125rem)`;
             sessionProgress.appendChild(sessionBar);
         }
@@ -393,14 +488,29 @@ class PomodoroTimer {
     updateTimerDisplay() {
         const minutes = Math.floor(this.secondsLeft / 60);
         const seconds = this.secondsLeft % 60;
-        document.getElementById('timer-display').textContent = 
-            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const timerDisplay = document.getElementById('timer-display');
         
-        document.getElementById('timer-mode').textContent = 
-            this.isBreak ? 'Break Time' : 'Focus Session';
+        // Add animation class when numbers change
+        if (timerDisplay.textContent !== `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`) {
+            timerDisplay.classList.add('changing');
+            setTimeout(() => timerDisplay.classList.remove('changing'), 300);
+        }
         
-        document.getElementById('session-count').textContent = 
-            `Session ${this.sessionCount + 1} of ${this.currentTask?.estimatedPomodoros || this.longBreakInterval}`;
+        timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Animate mode change
+        const timerMode = document.getElementById('timer-mode');
+        timerMode.textContent = this.isBreak ? 'Break Time' : 'Focus Session';
+        timerMode.style.animation = 'none';
+        timerMode.offsetHeight; // Trigger reflow
+        timerMode.style.animation = 'modeChange 0.5s ease-out';
+        
+        // Animate session count
+        const sessionCount = document.getElementById('session-count');
+        sessionCount.textContent = `Session ${this.sessionCount + 1} of ${this.currentTask?.estimatedPomodoros || this.longBreakInterval}`;
+        sessionCount.style.animation = 'none';
+        sessionCount.offsetHeight; // Trigger reflow
+        sessionCount.style.animation = 'modeChange 0.5s ease-out';
     }
 
     updateCurrentTaskDisplay() {
@@ -418,8 +528,14 @@ class PomodoroTimer {
         }
 
         const progress = (this.currentTask.pomodoros / this.currentTask.estimatedPomodoros) * 100;
+        const currentTaskElement = document.getElementById('current-task');
         
-        document.getElementById('current-task').innerHTML = `
+        // Add animation class
+        currentTaskElement.style.animation = 'none';
+        currentTaskElement.offsetHeight; // Trigger reflow
+        currentTaskElement.style.animation = 'fadeIn 0.5s ease-out';
+        
+        currentTaskElement.innerHTML = `
             <h3 class="font-medium ${this.currentTask.completed ? 'text-gray-500 line-through' : 'text-gray-900'} mb-1">
                 ${this.currentTask.name}
                 ${this.currentTask.completed ? '<span class="ml-2 text-xs text-green-600">(Completed)</span>' : ''}
@@ -429,7 +545,7 @@ class PomodoroTimer {
                 <span>${this.currentTask.pomodoros}/${this.currentTask.estimatedPomodoros} Pomodoros</span>
             </div>
             <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-cherry-500 h-full rounded-full" style="width: ${progress}%"></div>
+                <div class="bg-cherry-500 h-full rounded-full session-progress-bar" style="width: ${progress}%"></div>
             </div>
         `;
     }
@@ -458,6 +574,22 @@ class PomodoroTimer {
         if (!dateString) return 'No due date';
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('en-US', options);
+    }
+
+    initializeAnimations() {
+        // Add animation classes to stats numbers
+        const statsNumbers = document.querySelectorAll('.text-2xl');
+        statsNumbers.forEach(number => {
+            number.classList.add('changing');
+            setTimeout(() => number.classList.remove('changing'), 500);
+        });
+
+        // Add animation to timer display
+        const timerDisplay = document.getElementById('timer-display');
+        if (timerDisplay) {
+            timerDisplay.classList.add('changing');
+            setTimeout(() => timerDisplay.classList.remove('changing'), 500);
+        }
     }
 }
 
